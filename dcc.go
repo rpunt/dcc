@@ -37,7 +37,8 @@ func NewClient() *HttpClient {
 func sendRequest(client *HttpClient, path string, method string) (HttpResponse, error) {
 	requestData, _ := json.Marshal(client.Data)
 
-	req, err := http.NewRequest(method, client.BaseURL, bytes.NewBuffer(requestData))
+	url := fmt.Sprintf("%s%s", client.BaseURL, path)
+	req, err := http.NewRequest(method, url, bytes.NewBuffer(requestData))
 	if err != nil {
 		log.Panicf("Error Occurred. %+v", err)
 	}
@@ -64,19 +65,9 @@ func sendRequest(client *HttpClient, path string, method string) (HttpResponse, 
 }
 
 func (client *HttpClient) Get(path string) (HttpResponse, error) {
-	response, err := sendRequest(client, path, http.MethodGet)
-	if err != nil {
-		fmt.Println("error:", err)
-	}
-
-	return response, err
+	return sendRequest(client, path, http.MethodGet)
 }
 
 func (client *HttpClient) Post(path string) (HttpResponse, error) {
-	response, err := sendRequest(client, path, http.MethodPost)
-	if err != nil {
-		fmt.Println("error:", err)
-	}
-
-	return response, err
+	return sendRequest(client, path, http.MethodPost)
 }
