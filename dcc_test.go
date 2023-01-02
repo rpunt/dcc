@@ -13,7 +13,6 @@ import (
 
 func TestNewClient(t *testing.T) {
 	// client := NewClient()
-
 }
 
 func TestSendRequest(t *testing.T) {

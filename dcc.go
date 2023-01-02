@@ -14,6 +14,7 @@ type HttpClient struct {
 	BaseURL    string
 	Headers    map[string]string
 	Data       map[string]string
+	Params     map[string]string
 	HTTPClient *http.Client
 }
 
@@ -28,6 +29,7 @@ func NewClient() *HttpClient {
 		BaseURL: "",
 		Headers: make(map[string]string),
 		Data:    make(map[string]string),
+		Params:  make(map[string]string),
 		HTTPClient: &http.Client{
 			Timeout: 10 * time.Second,
 		},
@@ -35,16 +37,30 @@ func NewClient() *HttpClient {
 }
 
 func sendRequest(client *HttpClient, path string, method string) (HttpResponse, error) {
-	requestData, _ := json.Marshal(client.Data)
+	// url, err := url.Parse(fmt.Sprintf("%s%s", client.BaseURL, path))
+	// if err != nil {
+	// 	log.Panicf("Error occurred. %+v", err)
+	// }
 
-	url := fmt.Sprintf("%s%s", client.BaseURL, path)
-	req, err := http.NewRequest(method, url, bytes.NewBuffer(requestData))
+	var requestData []byte
+	if len(client.Data) > 0 {
+		requestData, _ = json.Marshal(client.Data)
+	}
+
+	req, err := http.NewRequest(method, fmt.Sprintf("%s%s", client.BaseURL, path), bytes.NewBuffer(requestData))
 	if err != nil {
 		log.Panicf("Error Occurred. %+v", err)
 	}
 	for k, v := range client.Headers {
 		req.Header.Set(k, v)
 	}
+
+	// Query params
+	q := req.URL.Query()
+	for k, v := range client.Params {
+		q.Add(k, v)
+	}
+	req.URL.RawQuery = q.Encode()
 
 	response, err := client.HTTPClient.Do(req)
 	if err != nil {
