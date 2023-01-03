@@ -1,5 +1,7 @@
 # simplehttp
 
+[![CI](https://github.com/rpunt/dcc/actions/workflows/ci.yml/badge.svg)](https://github.com/rpunt/dcc/actions/workflows/ci.yml)
+
 ## Features
 
 * A simple-to-use HTTP client library. Skip the "create client/create request/client does request" dance.
