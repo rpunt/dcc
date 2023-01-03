@@ -1,18 +1,26 @@
-package dcc
+package simplehttp
 
 import (
-	"io"
+	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 )
 
-// func TestNewClient(t *testing.T) {}
-// func TestSendRequest(t *testing.T) {}
+// some good test examples at https://github.com/imroc/req/blob/master/req_test.go
+
+var fixturePath string
+
+func init() {
+	pwd, _ := os.Getwd()
+	fixturePath = filepath.Join(pwd, "fixtures")
+}
 
 func TestWrapperMethods(t *testing.T) {
 	// there's gotta be a better way to reference a set of functions and call them sequentially...?
@@ -24,23 +32,14 @@ func TestWrapperMethods(t *testing.T) {
 	// }
 
 	t.Parallel()
-	ts := httptest.NewTLSServer(http.HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) {
-			f, err := os.Open("fixtures/icanhazdadjoke.json")
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer f.Close()
-			io.Copy(w, f)
-		},
-	))
+	ts := httptest.NewTLSServer(http.HandlerFunc(handleHTTP))
 	defer ts.Close()
 	c := NewClient()
 	c.BaseURL = ts.URL
 	c.HTTPClient = ts.Client()
 
 	t.Run("Get", func(t *testing.T) {
-		response, err := c.Get("/")
+		response, err := c.Get("/icanhazdadjoke")
 		if err != nil {
 			log.Panicln("error:", err)
 		}
@@ -124,6 +123,173 @@ func TestWrapperMethods(t *testing.T) {
 		}
 	})
 }
+
+func handleHTTP(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Method", r.Method)
+	switch r.Method {
+	case http.MethodGet:
+		handleGet(w, r)
+		// case http.MethodPost:
+		// 	handlePost(w, r)
+	}
+}
+
+func handleGet(w http.ResponseWriter, r *http.Request) {
+	switch r.URL.Path {
+	// 	case "/":
+	// 		w.Write([]byte("TestGet: text response"))
+	case "/icanhazdadjoke":
+		f, err := ioutil.ReadFile(fmt.Sprintf("%s/icanhazdadjoke.json", fixturePath))
+		if err != nil {
+			log.Panicf("Error. %+v", err)
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Write(f)
+		// 	case "/bad-request":
+		// 		w.WriteHeader(http.StatusBadRequest)
+		// 	case "/too-many":
+		// 		w.WriteHeader(http.StatusTooManyRequests)
+		// 		w.Header().Set(header.ContentType, header.JsonContentType)
+		// 		w.Write([]byte(`{"errMsg":"too many requests"}`))
+		// 	case "/chunked":
+		// 		w.Header().Add("Trailer", "Expires")
+		// 		w.Write([]byte(`This is a chunked body`))
+		// 	case "/host-header":
+		// 		w.Write([]byte(r.Host))
+		// 	case "/json":
+		// 		r.ParseForm()
+		// 		if r.FormValue("type") != "no" {
+		// 			w.Header().Set(header.ContentType, header.JsonContentType)
+		// 		}
+		// 		w.Header().Set(header.ContentType, header.JsonContentType)
+		// 		if r.FormValue("error") == "yes" {
+		// 			w.WriteHeader(http.StatusBadRequest)
+		// 			w.Write([]byte(`{"message": "not allowed"}`))
+		// 		} else {
+		// 			w.Write([]byte(`{"name": "roc"}`))
+		// 		}
+		// 	case "/xml":
+		// 		r.ParseForm()
+		// 		if r.FormValue("type") != "no" {
+		// 			w.Header().Set(header.ContentType, header.XmlContentType)
+		// 		}
+		// 		w.Write([]byte(`<user><name>roc</name></user>`))
+		// 	case "/unlimited-redirect":
+		// 		w.Header().Set("Location", "/unlimited-redirect")
+		// 		w.WriteHeader(http.StatusMovedPermanently)
+		// 	case "/redirect-to-other":
+		// 		w.Header().Set("Location", "http://dummy.local/test")
+		// 		w.WriteHeader(http.StatusMovedPermanently)
+		// 	case "/pragma":
+		// 		w.Header().Add("Pragma", "no-cache")
+		// 	case "/payload":
+		// 		b, _ := ioutil.ReadAll(r.Body)
+		// 		w.Write(b)
+		// 	case "/gbk":
+		// 		w.Header().Set(header.ContentType, "text/plain; charset=gbk")
+		// 		w.Write(toGbk("我是roc"))
+		// 	case "/gbk-no-charset":
+		// 		b, err := ioutil.ReadFile(tests.GetTestFilePath("sample-gbk.html"))
+		// 		if err != nil {
+		// 			panic(err)
+		// 		}
+		// 		w.Header().Set(header.ContentType, "text/html")
+		// 		w.Write(b)
+		// 	case "/header":
+		// 		b, _ := json.Marshal(r.Header)
+		// 		w.Header().Set(header.ContentType, header.JsonContentType)
+		// 		w.Write(b)
+		// 	case "/user-agent":
+		// 		w.Write([]byte(r.Header.Get(header.UserAgent)))
+		// 	case "/content-type":
+		// 		w.Write([]byte(r.Header.Get(header.ContentType)))
+		// 	case "/query-parameter":
+		// 		w.Write([]byte(r.URL.RawQuery))
+		// 	case "/search":
+		// 		handleSearch(w, r)
+		// 	case "/download":
+		// 		size := 100 * 1024 * 1024
+		// 		w.Header().Set("Content-Length", strconv.Itoa(size))
+		// 		buf := make([]byte, 1024)
+		// 		for i := 0; i < 1024; i++ {
+		// 			buf[i] = 'h'
+		// 		}
+		// 		for i := 0; i < size; {
+		// 			wbuf := buf
+		// 			if size-i < 1024 {
+		// 				wbuf = buf[:size-i]
+		// 			}
+		// 			n, err := w.Write(wbuf)
+		// 			if err != nil {
+		// 				break
+		// 			}
+		// 			i += n
+		// 		}
+		// 	case "/protected":
+		// 		auth := r.Header.Get("Authorization")
+		// 		if auth == "Bearer goodtoken" {
+		// 			w.Write([]byte("good"))
+		// 		} else {
+		// 			w.WriteHeader(http.StatusUnauthorized)
+		// 			w.Write([]byte(`bad`))
+		// 		}
+		// 	default:
+		// 		if strings.HasPrefix(r.URL.Path, "/user") {
+		// 			handleGetUserProfile(w, r)
+		// 		}
+	}
+}
+
+// func handlePost(w http.ResponseWriter, r *http.Request) {
+// 	switch r.URL.Path {
+// 	case "/":
+// 		io.Copy(ioutil.Discard, r.Body)
+// 		w.Write([]byte("TestPost: text response"))
+// 	case "/raw-upload":
+// 		io.Copy(ioutil.Discard, r.Body)
+// 	case "/file-text":
+// 		r.ParseMultipartForm(10e6)
+// 		files := r.MultipartForm.File["file"]
+// 		file, _ := files[0].Open()
+// 		b, _ := ioutil.ReadAll(file)
+// 		r.ParseForm()
+// 		if a := r.FormValue("attempt"); a != "" && a != "2" {
+// 			w.WriteHeader(http.StatusInternalServerError)
+// 		}
+// 		w.Write(b)
+// 	case "/form":
+// 		r.ParseForm()
+// 		ret, _ := json.Marshal(&r.Form)
+// 		w.Header().Set(header.ContentType, header.JsonContentType)
+// 		w.Write(ret)
+// 	case "/multipart":
+// 		r.ParseMultipartForm(10e6)
+// 		m := make(map[string]interface{})
+// 		m["values"] = r.MultipartForm.Value
+// 		m["files"] = r.MultipartForm.File
+// 		ret, _ := json.Marshal(&m)
+// 		w.Header().Set(header.ContentType, header.JsonContentType)
+// 		w.Write(ret)
+// 	case "/search":
+// 		handleSearch(w, r)
+// 	case "/redirect":
+// 		io.Copy(ioutil.Discard, r.Body)
+// 		w.Header().Set(header.Location, "/")
+// 		w.WriteHeader(http.StatusMovedPermanently)
+// 	case "/content-type":
+// 		io.Copy(ioutil.Discard, r.Body)
+// 		w.Write([]byte(r.Header.Get(header.ContentType)))
+// 	case "/echo":
+// 		b, _ := ioutil.ReadAll(r.Body)
+// 		e := Echo{
+// 			Header: r.Header,
+// 			Body:   string(b),
+// 		}
+// 		w.Header().Set(header.ContentType, header.JsonContentType)
+// 		result, _ := json.Marshal(&e)
+// 		w.Write(result)
+// 	}
+// }
 
 // online-only test; might use this eventually if I can mock out the correct return values
 // func TestWeather(t *testing.T) {
