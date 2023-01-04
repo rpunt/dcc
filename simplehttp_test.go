@@ -1,7 +1,9 @@
 package simplehttp
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -56,19 +58,23 @@ func TestWrapperMethods(t *testing.T) {
 	})
 
 	t.Run("Post", func(t *testing.T) {
-		response, err := c.Post("/")
+		c.Data["key"] = "value"
+		response, err := c.Post("/echo")
 		if err != nil {
 			log.Panicln("error:", err)
 		}
 
 		got := response
 		want := HttpResponse{
-			Body: "",
+			Body: "{\"key\":\"value\"}",
 			Code: 200,
 		}
 
 		if !cmp.Equal(want.Code, got.Code) {
 			t.Error(cmp.Diff(want.Code, got.Code))
+		}
+		if !cmp.Equal(want.Body, got.Body) {
+			t.Error(cmp.Diff(want.Body, got.Body))
 		}
 	})
 
@@ -129,8 +135,8 @@ func handleHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		handleGet(w, r)
-		// case http.MethodPost:
-		// 	handlePost(w, r)
+	case http.MethodPost:
+		handlePost(w, r)
 	}
 }
 
@@ -149,7 +155,7 @@ func handleGet(w http.ResponseWriter, r *http.Request) {
 		// 		w.WriteHeader(http.StatusBadRequest)
 		// 	case "/too-many":
 		// 		w.WriteHeader(http.StatusTooManyRequests)
-		// 		w.Header().Set(header.ContentType, header.JsonContentType)
+		// 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		// 		w.Write([]byte(`{"errMsg":"too many requests"}`))
 		// 	case "/chunked":
 		// 		w.Header().Add("Trailer", "Expires")
@@ -159,9 +165,9 @@ func handleGet(w http.ResponseWriter, r *http.Request) {
 		// 	case "/json":
 		// 		r.ParseForm()
 		// 		if r.FormValue("type") != "no" {
-		// 			w.Header().Set(header.ContentType, header.JsonContentType)
+		// 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		// 		}
-		// 		w.Header().Set(header.ContentType, header.JsonContentType)
+		// 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		// 		if r.FormValue("error") == "yes" {
 		// 			w.WriteHeader(http.StatusBadRequest)
 		// 			w.Write([]byte(`{"message": "not allowed"}`))
@@ -171,7 +177,7 @@ func handleGet(w http.ResponseWriter, r *http.Request) {
 		// 	case "/xml":
 		// 		r.ParseForm()
 		// 		if r.FormValue("type") != "no" {
-		// 			w.Header().Set(header.ContentType, header.XmlContentType)
+		// 			w.Header().Set("Content-Type", header.XmlContentType)
 		// 		}
 		// 		w.Write([]byte(`<user><name>roc</name></user>`))
 		// 	case "/unlimited-redirect":
@@ -186,23 +192,23 @@ func handleGet(w http.ResponseWriter, r *http.Request) {
 		// 		b, _ := ioutil.ReadAll(r.Body)
 		// 		w.Write(b)
 		// 	case "/gbk":
-		// 		w.Header().Set(header.ContentType, "text/plain; charset=gbk")
+		// 		w.Header().Set("Content-Type", "text/plain; charset=gbk")
 		// 		w.Write(toGbk("我是roc"))
 		// 	case "/gbk-no-charset":
 		// 		b, err := ioutil.ReadFile(tests.GetTestFilePath("sample-gbk.html"))
 		// 		if err != nil {
 		// 			panic(err)
 		// 		}
-		// 		w.Header().Set(header.ContentType, "text/html")
+		// 		w.Header().Set("Content-Type", "text/html")
 		// 		w.Write(b)
 		// 	case "/header":
 		// 		b, _ := json.Marshal(r.Header)
-		// 		w.Header().Set(header.ContentType, header.JsonContentType)
+		// 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		// 		w.Write(b)
 		// 	case "/user-agent":
 		// 		w.Write([]byte(r.Header.Get(header.UserAgent)))
 		// 	case "/content-type":
-		// 		w.Write([]byte(r.Header.Get(header.ContentType)))
+		// 		w.Write([]byte(r.Header.Get("Content-Type")))
 		// 	case "/query-parameter":
 		// 		w.Write([]byte(r.URL.RawQuery))
 		// 	case "/search":
@@ -240,56 +246,62 @@ func handleGet(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// func handlePost(w http.ResponseWriter, r *http.Request) {
-// 	switch r.URL.Path {
-// 	case "/":
-// 		io.Copy(ioutil.Discard, r.Body)
-// 		w.Write([]byte("TestPost: text response"))
-// 	case "/raw-upload":
-// 		io.Copy(ioutil.Discard, r.Body)
-// 	case "/file-text":
-// 		r.ParseMultipartForm(10e6)
-// 		files := r.MultipartForm.File["file"]
-// 		file, _ := files[0].Open()
-// 		b, _ := ioutil.ReadAll(file)
-// 		r.ParseForm()
-// 		if a := r.FormValue("attempt"); a != "" && a != "2" {
-// 			w.WriteHeader(http.StatusInternalServerError)
-// 		}
-// 		w.Write(b)
-// 	case "/form":
-// 		r.ParseForm()
-// 		ret, _ := json.Marshal(&r.Form)
-// 		w.Header().Set(header.ContentType, header.JsonContentType)
-// 		w.Write(ret)
-// 	case "/multipart":
-// 		r.ParseMultipartForm(10e6)
-// 		m := make(map[string]interface{})
-// 		m["values"] = r.MultipartForm.Value
-// 		m["files"] = r.MultipartForm.File
-// 		ret, _ := json.Marshal(&m)
-// 		w.Header().Set(header.ContentType, header.JsonContentType)
-// 		w.Write(ret)
-// 	case "/search":
-// 		handleSearch(w, r)
-// 	case "/redirect":
-// 		io.Copy(ioutil.Discard, r.Body)
-// 		w.Header().Set(header.Location, "/")
-// 		w.WriteHeader(http.StatusMovedPermanently)
-// 	case "/content-type":
-// 		io.Copy(ioutil.Discard, r.Body)
-// 		w.Write([]byte(r.Header.Get(header.ContentType)))
-// 	case "/echo":
-// 		b, _ := ioutil.ReadAll(r.Body)
-// 		e := Echo{
-// 			Header: r.Header,
-// 			Body:   string(b),
-// 		}
-// 		w.Header().Set(header.ContentType, header.JsonContentType)
-// 		result, _ := json.Marshal(&e)
-// 		w.Write(result)
-// 	}
-// }
+// Echo is used in "/echo" API.
+type Echo struct {
+	Header http.Header `json:"header" xml:"header"`
+	Body   string      `json:"body" xml:"body"`
+}
+
+func handlePost(w http.ResponseWriter, r *http.Request) {
+	switch r.URL.Path {
+	case "/":
+		io.Copy(ioutil.Discard, r.Body)
+		w.Write([]byte("TestPost: text response"))
+	case "/raw-upload":
+		io.Copy(ioutil.Discard, r.Body)
+	case "/file-text":
+		r.ParseMultipartForm(10e6)
+		files := r.MultipartForm.File["file"]
+		file, _ := files[0].Open()
+		b, _ := ioutil.ReadAll(file)
+		r.ParseForm()
+		if a := r.FormValue("attempt"); a != "" && a != "2" {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		w.Write(b)
+	case "/form":
+		r.ParseForm()
+		ret, _ := json.Marshal(&r.Form)
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Write(ret)
+	case "/multipart":
+		r.ParseMultipartForm(10e6)
+		m := make(map[string]interface{})
+		m["values"] = r.MultipartForm.Value
+		m["files"] = r.MultipartForm.File
+		ret, _ := json.Marshal(&m)
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Write(ret)
+	// case "/search":
+	// 	handleSearch(w, r)
+	case "/redirect":
+		io.Copy(ioutil.Discard, r.Body)
+		w.Header().Set("Location", "/")
+		w.WriteHeader(http.StatusMovedPermanently)
+	case "/content-type":
+		io.Copy(ioutil.Discard, r.Body)
+		w.Write([]byte(r.Header.Get("Content-Type")))
+	case "/echo":
+		b, _ := ioutil.ReadAll(r.Body)
+		e := Echo{
+			Header: r.Header,
+			Body:   string(b),
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		result, _ := json.Marshal(&e)
+		w.Write(result)
+	}
+}
 
 // online-only test; might use this eventually if I can mock out the correct return values
 // func TestWeather(t *testing.T) {
