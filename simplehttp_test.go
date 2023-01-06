@@ -66,7 +66,7 @@ func TestWrapperMethods(t *testing.T) {
 
 		got := response
 		want := HttpResponse{
-			Body: "{\"key\":\"value\"}",
+			Body: "{\"header\":{\"Accept-Encoding\":[\"gzip\"],\"Content-Length\":[\"15\"],\"User-Agent\":[\"Go-http-client/1.1\"]},\"body\":\"{\\\"key\\\":\\\"value\\\"}\"}",
 			Code: 200,
 		}
 
