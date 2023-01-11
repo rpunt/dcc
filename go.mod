@@ -1,4 +1,4 @@
-module github.com/rpunt/dcc
+module github.com/rpunt/simplehttp
 
 go 1.19
 
