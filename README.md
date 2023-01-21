@@ -38,11 +38,7 @@ client.Headers["Accept"] = "application/json"
 client.Params["key"] = "value"
 
 response, err := client.Get("/")
-if err != nil {
-  fmt.Println("error:", err)
-}
-
-fmt.Println(response.Body)
+// response is an HttpResponse object
 ```
 
 #### POST
@@ -55,11 +51,6 @@ client.BaseURL = "https://yoururl.here"
 client.Data["key"] = "value"
 
 response, err := client.Post("/")
-if err != nil {
-  fmt.Println("error:", err)
-}
-
-fmt.Println(response.Body)
 ```
 
 ### Supported methods
