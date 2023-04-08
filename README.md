@@ -30,8 +30,7 @@ import "github.com/rpunt/simplehttp"
 #### GET
 
 ```go
-client := simplehttp.New()
-client.BaseURL = "https://icanhazdadjoke.com"
+client := simplehttp.New("https://icanhazdadjoke.com")
 client.Headers["Accept"] = "application/json"
 
 // OPTIONAL: add query parameters
@@ -44,8 +43,7 @@ response, err := client.Get("/")
 #### POST
 
 ```go
-client := simplehttp.New()
-client.BaseURL = "https://yoururl.here"
+client := simplehttp.New("https://yoururl.here")
 
 // OPTIONAL: add a request body
 client.Data["key"] = "value"
