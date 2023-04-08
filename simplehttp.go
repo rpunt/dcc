@@ -24,9 +24,9 @@ type HttpResponse struct {
 	Headers map[string]string
 }
 
-func New() *HttpClient {
+func New(baseURL string) *HttpClient {
 	return &HttpClient{
-		BaseURL: "",
+		BaseURL: baseURL,
 		Headers: make(map[string]string),
 		Data:    make(map[string]string),
 		Params:  make(map[string]string),

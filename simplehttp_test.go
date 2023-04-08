@@ -36,8 +36,7 @@ func TestWrapperMethods(t *testing.T) {
 	t.Parallel()
 	ts := httptest.NewTLSServer(http.HandlerFunc(handleHTTP))
 	defer ts.Close()
-	c := New()
-	c.BaseURL = ts.URL
+	c := New(ts.URL)
 	c.HTTPClient = ts.Client()
 
 	t.Run("Get", func(t *testing.T) {
