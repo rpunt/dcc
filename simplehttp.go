@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"time"
 )
@@ -43,14 +42,14 @@ func sendRequest(client *HttpClient, path string, method string) (HttpResponse, 
 		var err error
 		requestData, err = json.Marshal(client.Data)
 		if err != nil {
-			log.Panicf("Error building request body. %+v", err)
+			return HttpResponse{}, err
 		}
 	}
 
 	// construct the request
 	req, err := http.NewRequest(method, fmt.Sprintf("%s%s", client.BaseURL, path), bytes.NewBuffer(requestData))
 	if err != nil {
-		log.Panicf("Error creating HTTP Request. %+v", err)
+		return HttpResponse{}, err
 	}
 	for k, v := range client.Headers {
 		req.Header.Set(k, v)
@@ -66,13 +65,13 @@ func sendRequest(client *HttpClient, path string, method string) (HttpResponse, 
 	// do :allthethings:
 	response, err := client.HTTPClient.Do(req)
 	if err != nil {
-		log.Panicf("Error sending request. Destination: %+v\nError: %+v", client.BaseURL, err)
+		return HttpResponse{}, err
 	}
 	defer response.Body.Close()
 
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
-		log.Panicf("Couldn't parse response body. %+v", err)
+		return HttpResponse{}, err
 	}
 
 	resp := HttpResponse{
