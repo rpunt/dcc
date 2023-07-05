@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -144,7 +143,7 @@ func handleGet(w http.ResponseWriter, r *http.Request) {
 	// 	case "/":
 	// 		w.Write([]byte("TestGet: text response"))
 	case "/icanhazdadjoke":
-		f, err := ioutil.ReadFile(fmt.Sprintf("%s/icanhazdadjoke.json", fixturePath))
+		f, err := os.ReadFile(fmt.Sprintf("%s/icanhazdadjoke.json", fixturePath))
 		if err != nil {
 			log.Panicf("Error. %+v", err)
 		}
@@ -188,13 +187,13 @@ func handleGet(w http.ResponseWriter, r *http.Request) {
 		// 	case "/pragma":
 		// 		w.Header().Add("Pragma", "no-cache")
 		// 	case "/payload":
-		// 		b, _ := ioutil.ReadAll(r.Body)
+		// 		b, _ := io.ReadAll(r.Body)
 		// 		w.Write(b)
 		// 	case "/gbk":
 		// 		w.Header().Set("Content-Type", "text/plain; charset=gbk")
 		// 		w.Write(toGbk("我是roc"))
 		// 	case "/gbk-no-charset":
-		// 		b, err := ioutil.ReadFile(tests.GetTestFilePath("sample-gbk.html"))
+		// 		b, err := io.ReadFile(tests.GetTestFilePath("sample-gbk.html"))
 		// 		if err != nil {
 		// 			panic(err)
 		// 		}
@@ -254,15 +253,15 @@ type Echo struct {
 func handlePost(w http.ResponseWriter, r *http.Request) {
 	switch r.URL.Path {
 	case "/":
-		io.Copy(ioutil.Discard, r.Body)
+		io.Copy(io.Discard, r.Body)
 		w.Write([]byte("TestPost: text response"))
 	case "/raw-upload":
-		io.Copy(ioutil.Discard, r.Body)
+		io.Copy(io.Discard, r.Body)
 	case "/file-text":
 		r.ParseMultipartForm(10e6)
 		files := r.MultipartForm.File["file"]
 		file, _ := files[0].Open()
-		b, _ := ioutil.ReadAll(file)
+		b, _ := io.ReadAll(file)
 		r.ParseForm()
 		if a := r.FormValue("attempt"); a != "" && a != "2" {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -284,14 +283,14 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 	// case "/search":
 	// 	handleSearch(w, r)
 	case "/redirect":
-		io.Copy(ioutil.Discard, r.Body)
+		io.Copy(io.Discard, r.Body)
 		w.Header().Set("Location", "/")
 		w.WriteHeader(http.StatusMovedPermanently)
 	case "/content-type":
-		io.Copy(ioutil.Discard, r.Body)
+		io.Copy(io.Discard, r.Body)
 		w.Write([]byte(r.Header.Get("Content-Type")))
 	case "/echo":
-		b, _ := ioutil.ReadAll(r.Body)
+		b, _ := io.ReadAll(r.Body)
 		e := Echo{
 			Header: r.Header,
 			Body:   string(b),
