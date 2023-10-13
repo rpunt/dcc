@@ -58,4 +58,7 @@ response, err := client.Post("/")
 * [x] PATCH
 * [x] PUT
 * [x] DELETE
-* [ ] HEAD
+* [x] HEAD
+* [ ] CONNECT
+* [ ] OPTIONS
+* [ ] TRACE

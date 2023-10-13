@@ -126,6 +126,23 @@ func TestWrapperMethods(t *testing.T) {
 			t.Error(cmp.Diff(want.Code, got.Code))
 		}
 	})
+
+	t.Run("Head", func(t *testing.T) {
+		response, err := c.Head("/")
+		if err != nil {
+			log.Panicln("error:", err)
+		}
+
+		got := response
+		want := HttpResponse{
+			Body: "",
+			Code: 200,
+		}
+
+		if !cmp.Equal(want.Code, got.Code) {
+			t.Error(cmp.Diff(want.Code, got.Code))
+		}
+	})
 }
 
 func handleHTTP(w http.ResponseWriter, r *http.Request) {

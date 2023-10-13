@@ -100,3 +100,7 @@ func (client *HttpClient) Put(path string) (HttpResponse, error) {
 func (client *HttpClient) Delete(path string) (HttpResponse, error) {
 	return sendRequest(client, path, http.MethodDelete)
 }
+
+func (client *HttpClient) Head(path string) (HttpResponse, error) {
+	return sendRequest(client, path, http.MethodHead)
+}
