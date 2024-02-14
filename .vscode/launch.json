@@ -5,22 +5,18 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Launch test function",
+      "name": "Go: Launch test function",
       "type": "go",
       "request": "launch",
       "mode": "test",
-      "program": "${workspaceFolder}",
-      "args": [
-        "-test.run",
-        "f1apireader_test"
-      ]
+      "program": "${fileDirname}",
+      "cwd": "${fileDirname}"
     },
     {
-      "name": "Launch Package",
+      "name": "Go: Launch Package",
       "type": "go",
       "request": "launch",
       "mode": "auto",
-      // "program": "${file}",
       "program": "${fileDirname}",
       "env": {},
       "args": []

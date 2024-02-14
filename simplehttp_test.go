@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -126,6 +127,35 @@ func TestWrapperMethods(t *testing.T) {
 			t.Error(cmp.Diff(want.Code, got.Code))
 		}
 	})
+
+	t.Run("Head", func(t *testing.T) {
+		c.Headers["accept"] = "Application/JSON"
+		c.Headers["Content-Type"] = "Application/JSON"
+
+		response, err := c.Head("/header")
+		if err != nil {
+			log.Panicln("error:", err)
+		}
+
+		want_headers := make(http.Header)
+		want_headers.Add("Method", "HEAD")
+		want_headers.Add("Content-Type", "application/json; charset=utf-8")
+
+		got := response
+		want := HttpResponse{
+			Body:    "",
+			Code:    200,
+			Headers: want_headers,
+		}
+
+		if !cmp.Equal(want.Code, got.Code) {
+			t.Error(cmp.Diff(want.Code, got.Code))
+		}
+
+		if !cmp.Equal(want.Headers["Content-Type"], got.Headers["Content-Type"]) {
+			t.Error(cmp.Diff(want.Headers, got.Headers))
+		}
+	})
 }
 
 func handleHTTP(w http.ResponseWriter, r *http.Request) {
@@ -135,6 +165,8 @@ func handleHTTP(w http.ResponseWriter, r *http.Request) {
 		handleGet(w, r)
 	case http.MethodPost:
 		handlePost(w, r)
+	case http.MethodHead:
+		handleHead(w, r)
 	}
 }
 
@@ -149,98 +181,98 @@ func handleGet(w http.ResponseWriter, r *http.Request) {
 		}
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.Write(f)
-		// 	case "/bad-request":
-		// 		w.WriteHeader(http.StatusBadRequest)
-		// 	case "/too-many":
-		// 		w.WriteHeader(http.StatusTooManyRequests)
-		// 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		// 		w.Write([]byte(`{"errMsg":"too many requests"}`))
-		// 	case "/chunked":
-		// 		w.Header().Add("Trailer", "Expires")
-		// 		w.Write([]byte(`This is a chunked body`))
-		// 	case "/host-header":
-		// 		w.Write([]byte(r.Host))
-		// 	case "/json":
-		// 		r.ParseForm()
-		// 		if r.FormValue("type") != "no" {
-		// 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		// 		}
-		// 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		// 		if r.FormValue("error") == "yes" {
-		// 			w.WriteHeader(http.StatusBadRequest)
-		// 			w.Write([]byte(`{"message": "not allowed"}`))
-		// 		} else {
-		// 			w.Write([]byte(`{"name": "roc"}`))
-		// 		}
-		// 	case "/xml":
-		// 		r.ParseForm()
-		// 		if r.FormValue("type") != "no" {
-		// 			w.Header().Set("Content-Type", header.XmlContentType)
-		// 		}
-		// 		w.Write([]byte(`<user><name>roc</name></user>`))
-		// 	case "/unlimited-redirect":
-		// 		w.Header().Set("Location", "/unlimited-redirect")
-		// 		w.WriteHeader(http.StatusMovedPermanently)
-		// 	case "/redirect-to-other":
-		// 		w.Header().Set("Location", "http://dummy.local/test")
-		// 		w.WriteHeader(http.StatusMovedPermanently)
-		// 	case "/pragma":
-		// 		w.Header().Add("Pragma", "no-cache")
-		// 	case "/payload":
-		// 		b, _ := io.ReadAll(r.Body)
-		// 		w.Write(b)
-		// 	case "/gbk":
-		// 		w.Header().Set("Content-Type", "text/plain; charset=gbk")
-		// 		w.Write(toGbk("我是roc"))
-		// 	case "/gbk-no-charset":
-		// 		b, err := io.ReadFile(tests.GetTestFilePath("sample-gbk.html"))
-		// 		if err != nil {
-		// 			panic(err)
-		// 		}
-		// 		w.Header().Set("Content-Type", "text/html")
-		// 		w.Write(b)
-		// 	case "/header":
-		// 		b, _ := json.Marshal(r.Header)
-		// 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		// 		w.Write(b)
-		// 	case "/user-agent":
-		// 		w.Write([]byte(r.Header.Get(header.UserAgent)))
-		// 	case "/content-type":
-		// 		w.Write([]byte(r.Header.Get("Content-Type")))
-		// 	case "/query-parameter":
-		// 		w.Write([]byte(r.URL.RawQuery))
-		// 	case "/search":
-		// 		handleSearch(w, r)
-		// 	case "/download":
-		// 		size := 100 * 1024 * 1024
-		// 		w.Header().Set("Content-Length", strconv.Itoa(size))
-		// 		buf := make([]byte, 1024)
-		// 		for i := 0; i < 1024; i++ {
-		// 			buf[i] = 'h'
-		// 		}
-		// 		for i := 0; i < size; {
-		// 			wbuf := buf
-		// 			if size-i < 1024 {
-		// 				wbuf = buf[:size-i]
-		// 			}
-		// 			n, err := w.Write(wbuf)
-		// 			if err != nil {
-		// 				break
-		// 			}
-		// 			i += n
-		// 		}
-		// 	case "/protected":
-		// 		auth := r.Header.Get("Authorization")
-		// 		if auth == "Bearer goodtoken" {
-		// 			w.Write([]byte("good"))
-		// 		} else {
-		// 			w.WriteHeader(http.StatusUnauthorized)
-		// 			w.Write([]byte(`bad`))
-		// 		}
-		// 	default:
-		// 		if strings.HasPrefix(r.URL.Path, "/user") {
-		// 			handleGetUserProfile(w, r)
-		// 		}
+	case "/bad-request":
+		w.WriteHeader(http.StatusBadRequest)
+	case "/too-many":
+		w.WriteHeader(http.StatusTooManyRequests)
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Write([]byte(`{"errMsg":"too many requests"}`))
+	case "/chunked":
+		w.Header().Add("Trailer", "Expires")
+		w.Write([]byte(`This is a chunked body`))
+	case "/host-header":
+		w.Write([]byte(r.Host))
+	case "/json":
+		r.ParseForm()
+		if r.FormValue("type") != "no" {
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		if r.FormValue("error") == "yes" {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(`{"message": "not allowed"}`))
+		} else {
+			w.Write([]byte(`{"name": "roc"}`))
+		}
+	// case "/xml":
+	// 	r.ParseForm()
+	// 	if r.FormValue("type") != "no" {
+	// 		w.Header().Set("Content-Type", header.XmlContentType)
+	// 	}
+	// 	w.Write([]byte(`<user><name>roc</name></user>`))
+	case "/unlimited-redirect":
+		w.Header().Set("Location", "/unlimited-redirect")
+		w.WriteHeader(http.StatusMovedPermanently)
+	case "/redirect-to-other":
+		w.Header().Set("Location", "http://dummy.local/test")
+		w.WriteHeader(http.StatusMovedPermanently)
+	case "/pragma":
+		w.Header().Add("Pragma", "no-cache")
+	case "/payload":
+		b, _ := io.ReadAll(r.Body)
+		w.Write(b)
+	// case "/gbk":
+	// 	w.Header().Set("Content-Type", "text/plain; charset=gbk")
+	// 	w.Write(toGbk("我是roc"))
+	// case "/gbk-no-charset":
+	// 	b, err := io.ReadFile(tests.GetTestFilePath("sample-gbk.html"))
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
+	// 	w.Header().Set("Content-Type", "text/html")
+	// 	w.Write(b)
+	case "/header":
+		b, _ := json.Marshal(r.Header)
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Write(b)
+	// case "/user-agent":
+	// 	w.Write([]byte(r.Header.Get(header.UserAgent)))
+	case "/content-type":
+		w.Write([]byte(r.Header.Get("Content-Type")))
+	case "/query-parameter":
+		w.Write([]byte(r.URL.RawQuery))
+	// case "/search":
+	// 	handleSearch(w, r)
+	case "/download":
+		size := 100 * 1024 * 1024
+		w.Header().Set("Content-Length", strconv.Itoa(size))
+		buf := make([]byte, 1024)
+		for i := 0; i < 1024; i++ {
+			buf[i] = 'h'
+		}
+		for i := 0; i < size; {
+			wbuf := buf
+			if size-i < 1024 {
+				wbuf = buf[:size-i]
+			}
+			n, err := w.Write(wbuf)
+			if err != nil {
+				break
+			}
+			i += n
+		}
+	case "/protected":
+		auth := r.Header.Get("Authorization")
+		if auth == "Bearer goodtoken" {
+			w.Write([]byte("good"))
+		} else {
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte(`bad`))
+		}
+	default:
+		// if strings.HasPrefix(r.URL.Path, "/user") {
+		// 	handleGetUserProfile(w, r)
+		// }
 	}
 }
 
@@ -298,6 +330,15 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		result, _ := json.Marshal(&e)
 		w.Write(result)
+	}
+}
+
+func handleHead(w http.ResponseWriter, r *http.Request) {
+	switch r.URL.Path {
+	case "/header":
+		b, _ := json.Marshal(r.Header)
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Write(b)
 	}
 }
 
