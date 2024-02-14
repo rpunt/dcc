@@ -11,6 +11,7 @@ import (
 
 type HttpClient struct {
 	BaseURL    string
+	// Headers    map[string][]string
 	Headers    map[string]string
 	Data       map[string]string
 	Params     map[string]string
@@ -20,17 +21,18 @@ type HttpClient struct {
 type HttpResponse struct {
 	Body    string
 	Code    int
-	Headers map[string]string
+	Headers map[string][]string
 }
 
 func New(baseURL string) *HttpClient {
 	return &HttpClient{
 		BaseURL: baseURL,
+		// Headers: make(map[string][]string),
 		Headers: make(map[string]string),
 		Data:    make(map[string]string),
 		Params:  make(map[string]string),
 		HTTPClient: &http.Client{
-			Timeout: 10 * time.Second,
+			Timeout: time.Second * 10,
 		},
 	}
 }
@@ -52,6 +54,7 @@ func sendRequest(client *HttpClient, path string, method string) (HttpResponse, 
 		return HttpResponse{}, err
 	}
 	for k, v := range client.Headers {
+		// req.Header.Set(k, v[0])
 		req.Header.Set(k, v)
 	}
 
@@ -74,9 +77,15 @@ func sendRequest(client *HttpClient, path string, method string) (HttpResponse, 
 		return HttpResponse{}, err
 	}
 
+	response_headers := make(map[string][]string)
+	for k, v := range response.Header {
+		response_headers[k] = v
+	}
+
 	resp := HttpResponse{
-		Body: string(body),
-		Code: response.StatusCode,
+		Body:    string(body),
+		Code:    response.StatusCode,
+		Headers: response_headers,
 	}
 	return resp, nil
 }
