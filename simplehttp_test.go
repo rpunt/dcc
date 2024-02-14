@@ -33,7 +33,7 @@ func TestWrapperMethods(t *testing.T) {
 	// 	{"get", 200},
 	// }
 
-	// t.Parallel()
+	t.Parallel()
 	ts := httptest.NewTLSServer(http.HandlerFunc(handleHTTP))
 	defer ts.Close()
 	c := New(ts.URL)
@@ -129,8 +129,8 @@ func TestWrapperMethods(t *testing.T) {
 	})
 
 	t.Run("Head", func(t *testing.T) {
-		// c.Headers["accept"] = "Application/JSON"
-		// c.Headers["Content-Type"] = "Application/JSON"
+		c.Headers["accept"] = "Application/JSON"
+		c.Headers["Content-Type"] = "Application/JSON"
 
 		response, err := c.Head("/header")
 		if err != nil {
@@ -143,8 +143,8 @@ func TestWrapperMethods(t *testing.T) {
 
 		got := response
 		want := HttpResponse{
-			Body: "",
-			Code: 200,
+			Body:    "",
+			Code:    200,
 			Headers: want_headers,
 		}
 
@@ -334,7 +334,6 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleHead(w http.ResponseWriter, r *http.Request) {
-	// switch r.Method {
 	switch r.URL.Path {
 	case "/header":
 		b, _ := json.Marshal(r.Header)

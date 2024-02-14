@@ -11,7 +11,6 @@ import (
 
 type HttpClient struct {
 	BaseURL    string
-	// Headers    map[string][]string
 	Headers    map[string]string
 	Data       map[string]string
 	Params     map[string]string
@@ -27,7 +26,6 @@ type HttpResponse struct {
 func New(baseURL string) *HttpClient {
 	return &HttpClient{
 		BaseURL: baseURL,
-		// Headers: make(map[string][]string),
 		Headers: make(map[string]string),
 		Data:    make(map[string]string),
 		Params:  make(map[string]string),
